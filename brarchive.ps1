@@ -3,6 +3,10 @@ $originalDir = Get-Location
 $packName = Split-Path $originalDir -Leaf
 # The directory of brarchived pack
 $brarchiveDir = "../$packName-"
+# Create if not exist
+if (!(Test-Path $brarchiveDir -PathType Container)) {
+  New-Item -Path "../" -Name "$packName-" -ItemType "Directory"
+}
 # Copy root files
 Get-ChildItem -Path ./* -File -Include *.json, *.png, *.md | Copy-Item -Destination $brarchiveDir
 Write-Host "Root files are successfully copied."
@@ -54,7 +58,7 @@ Write-Host "Br-archive Completed!" -ForegroundColor Green
 # Zip the pack to a mcpack file
 Read-Host -Prompt "Press Enter to output, or Ctrl + C to exit"
 Set-Location $brarchiveDir
-# Directory of mcpack files
+# Set your directory of mcpack files here...
 $outputDir = "path/to/mcpacks"
 $extName = "mcpack"
 $zipFile = Join-Path -Path $outputDir -ChildPath "$packName-.$extName"
