@@ -14,12 +14,24 @@ brarchive-cli encode -rd . $brarchiveDir
 Write-Host "The main pack $packName is archived."
 # Archive subpacks
 $subDirName = "subpacks"
+$brarchiveSubDir = Join-Path $brarchiveDir $subDirName
 if (Test-Path $subDirName -PathType Container) {
   Get-ChildItem -Directory ./$subDirName | ForEach-Object -Process{
     $subpackName = $_.Name
-    Get-ChildItem -Path $_/* -File -Include *.json | Copy-Item -Destination "$brarchiveDir/$subDirName/$subpackName"
-    Write-Host "Root files in $subpackName are successfully copied."
-    brarchive-cli encode -rd $_ "$brarchiveDir/$subDirName/$subpackName"
+    $brarchiveSubpackDir = Join-Path $brarchiveSubDir $subpackName
+    # Create if not exist
+    if (!(Test-Path $brarchiveSubpackDir -PathType Container)) {
+      New-Item -Path $brarchiveSubDir -Name $subpackName -ItemType "Directory"
+    }
+    $subpackRootFiles = Get-ChildItem -Path $_/* -File -Include *.json
+    $subpackRootFileCount = $subpackRootFiles.Count
+    if ($subpackRootFileCount) {
+      Copy-Item -Path $subpackRootFiles -Destination $brarchiveSubpackDir
+    }
+    Write-Host "$subpackRootFileCount root files in $subpackName are successfully copied."
+    if (Get-ChildItem -Path $_ -Directory) {
+      brarchive-cli encode -rd $_ $brarchiveSubpackDir
+    }
     Write-Host "The subpack $subpackName is archived."
   }
 }
@@ -40,9 +52,8 @@ foreach ($toRm in $toRemove) {
   }
 }
 # Remove in subpack directory
-$brarchiveSubDir = "$brarchiveDir/$subDirName"
 if (Test-Path $brarchiveSubDir -PathType Container) {
-  Get-ChildItem -Directory $brarchiveSubDir | ForEach-Object -Process{
+  Get-ChildItem -Directory $brarchiveSubDir | ForEach-Object -Process {
     $subpackName = $_.Name
     $toRm = "$_/__brarchive/$subpackName.brarchive"
     if (Test-Path -Path $toRm -PathType Leaf) {
@@ -56,7 +67,7 @@ else {
 }
 Write-Host "Br-archive Completed!" -ForegroundColor Green
 # Zip the pack to a mcpack file
-Read-Host -Prompt "Press Enter to output, or Ctrl + C to exit"
+Read-Host -Prompt "Press Enter to make a mcpack, or Ctrl + C to exit"
 Set-Location $brarchiveDir
 # Set your directory of mcpack files here...
 $outputDir = "path/to/mcpacks"
@@ -64,5 +75,5 @@ $extName = "mcpack"
 $zipFile = Join-Path -Path $outputDir -ChildPath "$packName-.$extName"
 # Need 7z to do this
 7z a -tzip $zipFile -r *.brarchive *.png *.lang *.json *.md -mx9 -aoa
-Write-Host "Successfully Archived as $zipFile" -ForegroundColor Green
+Write-Host "Successfully archived as $zipFile" -ForegroundColor Green
 Set-Location $originalDir
