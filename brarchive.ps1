@@ -1,11 +1,15 @@
 $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $originalDir = Get-Location
 $packName = Split-Path $originalDir -Leaf
-# The directory of brarchived pack
-$brarchiveDir = "../$packName-"
+
+# Directory of brarchived pack
+$brarchiveDir = "/path/to/brarchives/$packName"
+# Directory of mcpack archives
+$outputDir = "/path/to/mcpacks"
+
 # Create if not exist
 if (!(Test-Path $brarchiveDir -PathType Container)) {
-  New-Item -Path "../" -Name "$packName-" -ItemType "Directory"
+  New-Item -Path $brarchiveDir -ItemType "Directory"
 }
 # Copy root files
 Get-ChildItem -Path ./* -File -Include *.json, *.png, *.md | Copy-Item -Destination $brarchiveDir
@@ -21,7 +25,7 @@ if (Test-Path $subDirName -PathType Container) {
     $brarchiveSubpackDir = Join-Path $brarchiveSubDir $subpackName
     # Create if not exist
     if (!(Test-Path $brarchiveSubpackDir -PathType Container)) {
-      New-Item -Path $brarchiveSubDir -Name $subpackName -ItemType "Directory"
+      New-Item -Path $brarchiveSubpackDir -ItemType "Directory"
     }
     $subpackRootFiles = Get-ChildItem -Path $_/* -File -Include *.json
     $subpackRootFileCount = $subpackRootFiles.Count
@@ -69,10 +73,8 @@ Write-Host "Br-archive Completed!" -ForegroundColor Green
 # Zip the pack to a mcpack file
 Read-Host -Prompt "Press Enter to make a mcpack, or Ctrl + C to exit"
 Set-Location $brarchiveDir
-# Set your directory of mcpack files here...
-$outputDir = "path/to/mcpacks"
 $extName = "mcpack"
-$zipFile = Join-Path -Path $outputDir -ChildPath "$packName-.$extName"
+$zipFile = Join-Path -Path $outputDir -ChildPath "$packName.$extName"
 # Need 7z to do this
 7z a -tzip $zipFile -r *.brarchive *.png *.lang *.json *.md -mx9 -aoa
 Write-Host "Successfully archived as $zipFile" -ForegroundColor Green
