@@ -6,4 +6,4 @@ $outputDir = "/path/to/mcpacks"
 # Extension of the pack archive
 $extName = "mcpack"
 $zipFile = Join-Path -Path $outputDir -ChildPath "$packName.$extName"
-7z a -tzip $zipFile -r *.png *.tga *.hdr *.lang *.json *.md -mx9 -uq0
+7z a -tzip $zipFile @listfile/bedrock.txt -r -mx9 -uq0
