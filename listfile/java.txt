@@ -1,0 +1,12 @@
+*.png
+*.mcmeta
+*.mcfunction
+*.json
+*/texts/*.txt
+*/sounds/*.ogg
+*/shaders/*.vsh
+*/shaders/*.fsh
+*/shaders/*.glsl
+*/font/*.zip
+*.properties
+*.md
