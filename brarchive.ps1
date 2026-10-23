@@ -75,7 +75,7 @@ Read-Host -Prompt "Press Enter to make a mcpack, or Ctrl + C to exit"
 Set-Location $brarchiveDir
 $extName = "mcpack"
 $zipFile = Join-Path -Path $outputDir -ChildPath "$packName.$extName"
-# Need 7z to do this
-7z a -tzip $zipFile -r *.brarchive *.png *.lang *.json *.md -mx9 -aoa
+# Use 7z to archive mcpack; uq0 to remove files not on disk 
+7z a -tzip $zipFile -r *.brarchive *.png *.lang *.json *.md -mx9 -uq0
 Write-Host "Successfully archived as $zipFile" -ForegroundColor Green
 Set-Location $originalDir
