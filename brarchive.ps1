@@ -76,6 +76,6 @@ Set-Location $brarchiveDir
 $extName = "mcpack"
 $zipFile = Join-Path -Path $outputDir -ChildPath "$packName.$extName"
 # Use 7z to archive mcpack; uq0 to remove files not on disk 
-7z a -tzip $zipFile -r *.brarchive *.png *.lang *.json *.md -mx9 -uq0
+7z a -tzip $zipFile -r @listfile/bedrock.txt -mx9 -uq0
 Write-Host "Successfully archived as $zipFile" -ForegroundColor Green
 Set-Location $originalDir
