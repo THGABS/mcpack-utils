@@ -1,0 +1,9 @@
+*.png
+*.json
+*.brarchive
+*.lang
+*.tga
+*.hdr
+*.ogg
+*.fsb
+*.md
