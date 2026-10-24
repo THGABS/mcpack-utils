@@ -1,11 +1,15 @@
-$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$originalDir = Get-Location
-$packName = Split-Path $originalDir -Leaf
+param (
+  [Parameter(Position=0)]
+  [string]$packDir = (Get-Location),
+  
+  [Parameter(Position=1)]
+  [string]$outputDir = $packDir,
+  
+  [string]$packName = (Split-Path -Path $packDir -Leaf),
+  [string]$brarchiveDir = (Split-Path -Path $packDir -Parent | Join-Path -ChildPath "brarchive/$packName"),
+)
 
-# Directory of brarchived pack
-$brarchiveDir = "/path/to/brarchives/$packName"
-# Directory of mcpack archives
-$outputDir = "/path/to/mcpacks"
+$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # Create if not exist
 if (!(Test-Path $brarchiveDir -PathType Container)) {
@@ -78,4 +82,4 @@ $zipFile = Join-Path -Path $outputDir -ChildPath "$packName.$extName"
 # Use 7z to archive mcpack; uq0 to remove files not on disk 
 7z a -tzip $zipFile -r @listfile/bedrock.txt -mx9 -uq0
 Write-Host "Successfully archived as $zipFile" -ForegroundColor Green
-Set-Location $originalDir
+Set-Location $packDir
