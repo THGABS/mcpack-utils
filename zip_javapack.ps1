@@ -6,4 +6,4 @@ $outputDir = "/path/to/packs"
 # Extension of the pack archive
 $extName = "zip"
 $zipFile = Join-Path -Path $outputDir -ChildPath "$packName.$extName"
-7z a -tzip $zipFile -r @listfile/java.txt -mx9 -uq0
+7z a -tzip $zipFile -r @$PSScriptRoot/listfile/java.txt -mx9 -uq0
