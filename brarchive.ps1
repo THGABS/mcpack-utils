@@ -6,80 +6,92 @@ param (
   [string]$outputDir = $packDir,
   
   [string]$packName = (Split-Path -Path $packDir -Leaf),
-  [string]$brarchiveDir = (Split-Path -Path $packDir -Parent | Join-Path -ChildPath "brarchive/$packName"),
+  [string]$brarchiveDir = (Split-Path -Path $packDir -Parent | Join-Path -ChildPath "brarchive/$packName")
 )
 
 $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-# Create if not exist
-if (!(Test-Path $brarchiveDir -PathType Container)) {
-  New-Item -Path $brarchiveDir -ItemType "Directory"
+function Archive-Pack {
+  # Copy root files and br-archive other contents
+  param (
+    [Parameter(Position=0)]
+    [string]$packDir = $packDir,
+
+    [Parameter(Position=1)]
+    [string]$archiveDir = $brarchiveDir,
+
+    [string]$packName = (Split-Path -Path $packDir -Leaf)
+  )
+  # Create if not exist
+  if (!(Test-Path $archiveDir -PathType Container)) {
+    New-Item -Path $archiveDir -ItemType "Directory"
+  }
+
+  # Copy root files
+  $rootFiles = Get-ChildItem -Path $packDir/* -File -Include *.json, *.png, *.md
+  $rootFileCount = $rootFiles.Count
+  if ($rootFiles) {
+    Copy-Item -Path $rootFiles -Destination $archiveDir
+    Write-Host "$rootFileCount root files in $packName are successfully copied."
+  }
+
+  # Br-archive contents
+  if (Get-ChildItem -Path $packDir -Directory) {
+    brarchive encode --recursive --skip-root $packDir $archiveDir
+  }
+  Write-Host "The pack $packName is successfully archived."
+  Write-Host
 }
-# Copy root files
-Get-ChildItem -Path ./* -File -Include *.json, *.png, *.md | Copy-Item -Destination $brarchiveDir
-Write-Host "Root files are successfully copied."
-brarchive-cli encode -rd . $brarchiveDir
-Write-Host "The main pack $packName is archived."
+
+function Remove-Leftover {
+  # Remove extra brarchives
+  param (  
+    [Parameter(Position=0)]
+    [string]$dir = $brarchiveDir,
+
+    [Parameter(ValueFromRemainingArguments, Position=1)]
+    [string[]]$toRemoveArr = "subpacks"
+  )
+  $workDir = Join-Path $dir __brarchive
+  foreach ($toRemove in $toRemoveArr) {
+    $toRmPath = Join-Path $workDir $toRemove
+    if (Test-Path -Path $toRmPath -PathType Leaf) {
+      Remove-Item $toRmPath
+      Write-Host "File $toRemove is removed."
+    }
+    elseif (Test-Path -Path $toRmPath -PathType Container) {
+      Remove-Item -Recurse $toRmPath
+      Write-Host "Directory $toRemove is removed."
+    }
+    else {
+      Write-Host "File or Directory $toRemove is not found."
+    }
+  }
+  Write-Host
+}
+
+# Archive the main pack
+Archive-Pack $packDir $brarchiveDir -packName $packName
+Remove-Leftover $brarchiveDir subpacks
+
 # Archive subpacks
-$subDirName = "subpacks"
-$brarchiveSubDir = Join-Path $brarchiveDir $subDirName
-if (Test-Path $subDirName -PathType Container) {
-  Get-ChildItem -Directory ./$subDirName | ForEach-Object -Process{
+$subpackDir = Join-Path $packDir "subpacks"
+if (Test-Path $subpackDir -PathType Container) {
+  $brarchiveSubpackDir = Join-Path $brarchiveDir "subpacks"
+  Get-ChildItem -Directory $subpackDir | ForEach-Object -Process{
     $subpackName = $_.Name
-    $brarchiveSubpackDir = Join-Path $brarchiveSubDir $subpackName
-    # Create if not exist
-    if (!(Test-Path $brarchiveSubpackDir -PathType Container)) {
-      New-Item -Path $brarchiveSubpackDir -ItemType "Directory"
-    }
-    $subpackRootFiles = Get-ChildItem -Path $_/* -File -Include *.json
-    $subpackRootFileCount = $subpackRootFiles.Count
-    if ($subpackRootFileCount) {
-      Copy-Item -Path $subpackRootFiles -Destination $brarchiveSubpackDir
-    }
-    Write-Host "$subpackRootFileCount root files in $subpackName are successfully copied."
-    if (Get-ChildItem -Path $_ -Directory) {
-      brarchive-cli encode -rd $_ $brarchiveSubpackDir
-    }
-    Write-Host "The subpack $subpackName is archived."
+    $thisBrSubpackDir = Join-Path $brarchiveSubpackDir $subpackName
+    Archive-Pack $_ $thisBrSubpackDir
+    # Remove-Leftover $thisBrSubpackDir "$subpackName.brarchive"
   }
 }
 else {
-  Write-Host "No subpack detected!"
+  Write-Host "No subpack found in $packName"
 }
-# Remove extra brarchives
-$toRemove = "root.brarchive", "subpacks"
-foreach ($toRm in $toRemove) {
-  $toRmPath = "$brarchiveDir/__brarchive/$toRm"
-  if (Test-Path -Path $toRmPath -PathType Leaf) {
-    Remove-Item $toRmPath
-    Write-Host "File $toRm is removed."
-  }
-  elseif (Test-Path -Path $toRmPath -PathType Container) {
-    Remove-Item -Recurse $toRmPath
-    Write-Host "Directory $toRm is removed."
-  }
-}
-# Remove in subpack directory
-if (Test-Path $brarchiveSubDir -PathType Container) {
-  Get-ChildItem -Directory $brarchiveSubDir | ForEach-Object -Process {
-    $subpackName = $_.Name
-    $toRm = "$_/__brarchive/$subpackName.brarchive"
-    if (Test-Path -Path $toRm -PathType Leaf) {
-      Remove-Item $toRm
-      Write-Host "$subpackName.brarchive is removed."
-    }
-  }
-}
-else {
-  Write-Host "No subpack detected in $brarchiveDir!"
-}
+
 Write-Host "Br-archive Completed!" -ForegroundColor Green
+Write-Host
+
 # Zip the pack to a mcpack file
 Read-Host -Prompt "Press Enter to make a mcpack, or Ctrl + C to exit"
-Set-Location $brarchiveDir
-$extName = "mcpack"
-$zipFile = Join-Path -Path $outputDir -ChildPath "$packName.$extName"
-# Use 7z to archive mcpack; uq0 to remove files not on disk 
-7z a -tzip $zipFile -r @listfile/bedrock.txt -mx9 -uq0
-Write-Host "Successfully archived as $zipFile" -ForegroundColor Green
-Set-Location $packDir
+zip-pack.ps1 -packDir $brarchiveDir -outputDir $outputDir -packName $packName
