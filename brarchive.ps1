@@ -5,8 +5,9 @@ param (
   [Parameter(Position=1)]
   [string]$outputDir = $packDir,
   
-  [string]$packName = (Split-Path -Path $packDir -Leaf),
-  [string]$brarchiveDir = (Split-Path -Path $packDir -Parent | Join-Path -ChildPath "brarchive/$packName")
+  [string]$brarchiveDir = (Split-Path -Path $packDir -Parent | Join-Path -ChildPath brarchive),
+  
+  [string]$packName = (Split-Path -Path $packDir -Leaf)
 )
 
 $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -69,6 +70,8 @@ function Remove-Leftover {
   }
   Write-Host
 }
+
+$brarchiveDir = Join-Path $brarchiveDir $packName
 
 # Archive the main pack
 Archive-Pack $packDir $brarchiveDir -packName $packName
